@@ -24,7 +24,15 @@
 
 
     <div class="list-group">
-      
+      <h1>Search Results</h1>
+      <ul>
+        <% books.forEach((book) => { %>
+          <li>
+            <h3><%= book.title %></h3>
+            <p>Authors: <%= book.authors.map((author) => author.name).join(', ') %></p>
+          </li>
+        <% }) %>
+      </ul>
     </div>
   </div>
 </div>
