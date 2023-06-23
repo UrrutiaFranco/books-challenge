@@ -1,6 +1,7 @@
 const bcryptjs = require('bcryptjs');
 const db = require('../database/models');
-const {Book}= require("../database/models");
+const {Book , User , Author}= require("../database/models");
+
 
 const mainController = {
   home: (req, res) => {
@@ -50,10 +51,16 @@ const mainController = {
   },
   deleteBook: (req, res) => {
     // Implement delete book
+    Book.destroy({
+      where: {
+          id: req.params.id
+      }
+  })
     res.render('home');
+   
   },
   authors: (req, res) => {
-    db.Author.findAll()
+    Author.findAll()
       .then((authors) => {
         res.render('authors', { authors });
       })
@@ -61,14 +68,20 @@ const mainController = {
   },
   authorBooks: (req, res) => {
     // Implement books by author
-
-    res.render('authorBooks');
+    Author.findByPk(req.params.id, {
+      include: [{ association: 'books' }]
+    })
+    .then((author) => {
+      res.render('authorBooks', {author});
+    })
+    .catch((error) => console.log(error));
+  
   },
   register: (req, res) => {
     res.render('register');
   },
   processRegister: (req, res) => {
-    db.User.create({
+    User.create({
       Name: req.body.name,
       Email: req.body.email,
       Country: req.body.country,
@@ -82,15 +95,48 @@ const mainController = {
   },
   login: (req, res) => {
     // Implement login process
+
     res.render('login');
   },
   processLogin: (req, res) => {
     // Implement login process
-    res.render('home');
+    let userLogin;
+    let passwordUser
+    db.User.findAll()
+      .then(users => {
+        userLogin = users.find(user => user.Email.toLowerCase() === req.body.email.toLowerCase());
+          if(userLogin) {
+            passwordUser = bcryptjs.compareSync(req.body.password, userLogin.Pass)
+          }
+          if(passwordUser){
+            let nameId = userLogin.Name
+
+            res.cookie('login', true)
+            res.cookie('admin', userLogin.CategoryId)
+            res.cookie('name', nameId)
+            res.redirect('/');
+          }
+      })
   },
+  
+  logout: (req, res) => {
+
+    res.clearCookie("login")
+    res.clearCookie("admin")
+    res.clearCookie("name")
+    res.redirect('/')
+    
+  
+},    
   edit: (req, res) => {
     // Implement edit book
-    res.render('editBook', {id: req.params.id})
+    Book.findByPk(req.params.id, {
+      include: [{ association: 'authors' }]
+    })
+      .then((book) => {
+        res.render('editBook', { book });
+      })
+      .catch((error) => console.log(error));
   },
   processEdit: (req, res) => {
     // Implement edit book
