@@ -21,9 +21,11 @@ const mainController = {
       include: [{ association: "authors"}]})
       .then((books) => {
         const authors = books.authors.map((authors) => authors.name);
+        const isAdminLoggedIn = req.cookies.admin === 'admin';
           return res.render('bookDetail', {
               books,
-              authors
+              authors,
+              isAdminLoggedIn
           })
       })
       .catch(err => console.log(err))
@@ -134,7 +136,8 @@ const mainController = {
       include: [{ association: 'authors' }]
     })
       .then((book) => {
-        res.render('editBook', { book });
+        const isAdminLoggedIn = req.cookies.admin === 'admin';
+        res.render('editBook', { book,isAdminLoggedIn  });
       })
       .catch((error) => console.log(error));
   },
