@@ -19,11 +19,11 @@ const mainController = {
     const bookId = req.params.id
      Book.findByPk(bookId, {
       include: [{ association: "authors"}]})
-      .then((books) => {
-        const authors = books.authors.map((authors) => authors.name);
+      .then((book) => {
+        const authors = book.authors.map((authors) => authors.name);
         const isAdminLoggedIn = req.cookies.admin === 'admin';
           return res.render('bookDetail', {
-              books,
+              book,
               authors,
               isAdminLoggedIn
           })
@@ -49,16 +49,28 @@ const mainController = {
           res.render('search', { books });
         })
         .catch((error) => console.log(error));
-    res.render('search');
+   
   },
   deleteBook: (req, res) => {
     // Implement delete book
-    Book.destroy({
-      where: {
-          id: req.params.id
-      }
-  })
-    res.render('home');
+    Book.destroy({ 
+      where: { 
+        id: req.params.id 
+      }, 
+      include: [{ association: 'authors' }],
+      force: true 
+    })
+      .then((book) => {
+        db.Book.findAll({
+          include: [{ association: 'authors' }]
+        })
+          .then((books) => {
+            res.render('home', { 
+              book,
+              books 
+            });
+          })})
+          .catch((error) => console.log(error))
    
   },
   authors: (req, res) => {
@@ -104,7 +116,7 @@ const mainController = {
     // Implement login process
     let userLogin;
     let passwordUser
-    db.User.findAll()
+    User.findAll()
       .then(users => {
         userLogin = users.find(user => user.Email.toLowerCase() === req.body.email.toLowerCase());
           if(userLogin) {
@@ -130,20 +142,27 @@ const mainController = {
     
   
 },    
-  edit: (req, res) => {
+  edit:  async  (req, res) => {
     // Implement edit book
-    Book.findByPk(req.params.id, {
-      include: [{ association: 'authors' }]
-    })
-      .then((book) => {
-        const isAdminLoggedIn = req.cookies.admin === 'admin';
-        res.render('editBook', { book,isAdminLoggedIn  });
-      })
-      .catch((error) => console.log(error));
+    let book = await Book.findByPk(req.params.id, {
+      include: [{ association: "authors" }],
+    });
+    res.render("editBook", { book, session: req.session });
   },
-  processEdit: (req, res) => {
+  processEdit:  async (req, res) => {
     // Implement edit book
-    res.render('home');
+    let bookToEdit = {
+      title: req.body.title,
+      description: req.body.description,
+      cover: req.body.cover,
+    };
+    await Book.update(bookToEdit, {
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    res.redirect("/");
   }
 };
 

@@ -3,6 +3,8 @@ const mainRouter = require('./routes/main');
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const sessionUser = require("./middleware/sessionUser");
+const methodOverride = require("method-override")
+
 const app = express();
 
 app.use(express.urlencoded({ extended: false }));
@@ -17,6 +19,7 @@ app.use(session({
 }));
 app.use(cookieParser());
 app.use(sessionUser);
+app.use(methodOverride("_method"));
 app.use('/', mainRouter);
 
 app.listen(3000, () => {
